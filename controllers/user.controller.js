@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import generateJwtToken from "../utils/generateJwtToken.js";
 
 const register = async (req, res) => {
   try {
@@ -51,11 +52,11 @@ const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "All feilds are required",
+        message: "All fields are required",
       });
     }
 
-    const user = await User.find({ email });
+    const user = await User.findOne({ email }); // ✅ fixed
 
     if (!user) {
       return res.status(400).json({
@@ -65,6 +66,7 @@ const login = async (req, res) => {
     }
 
     const isPasswordMatched = await bcrypt.compare(password, user.password);
+
     if (!isPasswordMatched) {
       return res.status(400).json({
         success: false,
@@ -72,15 +74,16 @@ const login = async (req, res) => {
       });
     }
 
-    
+    user.password = undefined; // 🔐 hide password
 
-
-
+    return generateJwtToken(res, user, `Welcome back ${user.name}`); // ✅ return
   } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
-      message: "Failed to Register",
+      message: "Failed to Login", // ✅ fixed
     });
   }
 };
+
+export  {login , register}
