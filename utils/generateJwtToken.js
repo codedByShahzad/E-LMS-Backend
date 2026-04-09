@@ -9,12 +9,13 @@ const generateJwtToken = async (res, user, message) => {
   });
 
   return res
-    .status(200)
-    .cookie("token", token, {
-      httpOnly: true,
-      sameSite: "strict",
-      maxAge: ms("1d")
-    }).json({
+  .status(200)
+  .cookie("token", token, {
+    httpOnly: true,
+    secure: false,        // ✅ ADD THIS - must be false for HTTP localhost
+    sameSite: "lax",      // ✅ CHANGE from "strict" to "lax"
+    maxAge: ms("1d")
+  }).json({
         success: true,
         message,
         user

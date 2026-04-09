@@ -2,35 +2,28 @@ import jwt from "jsonwebtoken";
 
 export const isAuthenticated = async (req, res, next) => {
   try {
+    const token = req.cookies.token;
 
-    const token = req.cookies.token
-
-    if(!token){
-        return res.status(401).json({
-            success: false,
-            message: "User not Authenticated"
-        })
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated"
+      });
     }
 
-    const decodeToken = jwt.decode(token, process.env.JWT_SECRET)
+    // ✅ Use verify, not decode
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-    if(!decodeToken){
-        return res.status(401).json({
-            success: false,
-            message: "Token not found"
-        })
-    }
-
-    req.id = userId
-    next()
+    // ✅ Extract userId from the verified token
+    req.id = decodedToken.userId;  // or decodedToken.id, depending on your token structure
+    
+    next();
 
   } catch (error) {
-
     console.log(error);
-    return res.status(500).json({
+    return res.status(401).json({  // ✅ 401 for auth failures, not 500
       success: false,
-      message: "Failed to Authenticate", // ✅ fixed
+      message: "Invalid or expired token"
     });
-
   }
 };
