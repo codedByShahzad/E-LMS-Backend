@@ -86,4 +86,25 @@ const login = async (req, res) => {
   }
 };
 
-export  {login , register}
+const logout = async (res, req) =>{
+  try {
+    
+    res.status(200).cookie("token", "", {maxAge:0}).json({
+      success: true,
+      message: "Logged out Successfully"
+    })
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to Logout", // ✅ fixed
+    });
+  }
+}
+
+
+
+
+
+export  {login , register, logout}
