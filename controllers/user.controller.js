@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import generateJwtToken from "../utils/generateJwtToken.js";
+import { deleteMediaFromCloudinary, uploadMedia } from "../utils/cloudnairy.js";
 
 const register = async (req, res) => {
   try {
@@ -133,22 +134,53 @@ const updateProfile = async (req, res) => {
     const { name } = req.body;
     const profilePhoto = req.file;
 
-    const user = await User.findById(userId)
+    const user = await User.findById(userId);
 
-    if(!user){
+    if (!user) {
       return res.status(404).json({
         message: "User not Found",
-        success: false
-      })
+        success: false,
+      });
     }
 
+    let photoUrl = user.photoUrl; // keep old by default
+
+    // ✅ Only handle image if uploaded
+    if (profilePhoto) {
+      // delete old image
+      if (user.photoUrl) {
+        const publicId = user.photoUrl.split("/").pop().split(".")[0];
+        await deleteMediaFromCloudinary(publicId);
+      }
+
+      // upload new image
+      const cloudResponse = await uploadMedia(profilePhoto.path);
+      photoUrl = cloudResponse.secure_url;
+    }
+
+    const updateData = {
+      name: name || user.name, // ✅ safe fallback
+      photoUrl,
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    ).select("-password"); // ✅ correct chaining
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile Updated Successfully",
+      user: updatedUser,
+    });
   } catch (error) {
-     console.log(error);
+    console.log("UPDATE ERROR:", error); // 👈 important
     return res.status(500).json({
       success: false,
-      message: "Failed to Update User", // ✅ fixed
+      message: "Failed to Update User",
     });
   }
 };
 
-export { login, register, logout, getUserProfile };
+export { login, register, logout, getUserProfile, updateProfile };
